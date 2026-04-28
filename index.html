@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Musik Santai - Web Player Responsif</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, 'Poppins', sans-serif;
+            background: linear-gradient(145deg, #0b0f1c 0%, #0a0e1a 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.2rem;
+        }
+
+        /* Glassmorphism card utama */
+        .music-container {
+            max-width: 550px;
+            width: 100%;
+            background: rgba(20, 25, 45, 0.65);
+            backdrop-filter: blur(14px);
+            border-radius: 2.5rem;
+            box-shadow: 0 25px 45px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        /* header */
+        .player-header {
+            padding: 1.5rem 1.8rem 0.5rem 1.8rem;
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+        .player-header h1 {
+            font-size: 1.7rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, #FFFFFF, #b9c3ff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            letter-spacing: -0.3px;
+        }
+        .badge {
+            background: rgba(255, 255, 255, 0.12);
+            padding: 0.3rem 0.9rem;
+            border-radius: 40px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: #b9c6f0;
+        }
+
+        /* area cover art + info lagu */
+        .cover-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 1.2rem 1.5rem 1rem 1.5rem;
+        }
+        .cover-circle {
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle at 30% 20%, #2a2f4b, #10121e);
+            border-radius: 50%;
+            box-shadow: 0 20px 35px -10px rgba(0, 0, 0, 0.6), inset 0 0 0 3px rgba(255,255,240,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+        .cover-circle i {
+            font-size: 5rem;
+            color: rgba(255,245,200,0.85);
+            text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+        .track-info {
+            text-align: center;
+            margin-top: 1.2rem;
+        }
+        .track-title {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: white;
+            letter-spacing: -0.3px;
+            word-break: break-word;
+        }
+        .track-artist {
+            font-size: 0.9rem;
+            color: #a6b0db;
+            margin-top: 0.25rem;
+        }
+
+        /* player kontrol (play/pause, prev, next, progress) */
+        .controls {
+            padding: 0.6rem 1.5rem 1rem 1.5rem;
+        }
+        .progress-area {
+            display: flex;
+            align-items: center;
+            gap: 0.7rem;
+            font-size: 0.75rem;
+            color: #cbd5ff;
+            font-weight: 500;
+        }
+        input[type="range"] {
+            flex: 1;
+            height: 5px;
+            -webkit-appearance: none;
+            background: #2f3557;
+            border-radius: 10px;
+            outline: none;
+        }
+        input[type="range"]:focus {
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 14px;
+            height: 14px;
+            background: #ffffff;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 0 6px #b0c4ff;
+            border: none;
+        }
+        .time-current, .time-duration {
+            min-width: 38px;
+            text-align: center;
+        }
+        .action-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+        .ctrl-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: none;
+            width: 56px;
+            height: 56px;
+            border-radius: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+        .ctrl-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.02);
+        }
+        .ctrl-btn:active {
+            transform: scale(0.97);
+        }
+        .play-pause {
+            background: #4c6ef5;
+            width: 70px;
+            height: 70px;
+            box-shadow: 0 6px 18px rgba(76, 110, 245, 0.4);
+        }
+        .play-pause:hover {
+            background: #5f7bf8;
+        }
+        .ctrl-btn svg {
+            width: 28px;
+            height: 28px;
+            fill: white;
+            stroke: none;
+        }
+        .play-pause svg {
+            width: 32px;
+            height: 32px;
+        }
+
+        /* daftar lagu (playlist dari repomu) */
+        .playlist-section {
+            padding: 0.2rem 1.2rem 1.8rem 1.2rem;
+        }
+        .section-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding: 0.8rem 0.5rem 0.5rem 0.5rem;
+            border-top: 1px solid rgba(255,255,245,0.1);
+            margin-top: 0.5rem;
+        }
+        .section-title span:first-child {
+            font-weight: 600;
+            color: #dfe6ff;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
+        }
+        .section-title span:last-child {
+            font-size: 0.7rem;
+            color: #8f9be0;
+        }
+        .track-list {
+            list-style: none;
+            max-height: 270px;
+            overflow-y: auto;
+            padding-right: 4px;
+        }
+        .track-list li {
+            background: rgba(10, 14, 26, 0.5);
+            margin: 0.5rem 0;
+            padding: 0.9rem 1rem;
+            border-radius: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.03);
+        }
+        .track-list li:hover {
+            background: rgba(30, 38, 70, 0.8);
+            transform: translateX(4px);
+        }
+        .track-list li.active-track {
+            background: #2a3670;
+            border-left: 4px solid #6c8cff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        .track-index {
+            background: #1e243f;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            color: #b9c2ff;
+        }
+        .track-name {
+            flex: 1;
+            font-weight: 500;
+            color: #f0f3ff;
+            font-size: 0.95rem;
+            word-break: break-word;
+        }
+        .track-duration {
+            font-size: 0.7rem;
+            color: #9aa4dc;
+            font-family: monospace;
+        }
+        .now-playing-badge {
+            font-size: 0.7rem;
+            background: #4c6ef5;
+            padding: 0.2rem 0.6rem;
+            border-radius: 30px;
+            color: white;
+        }
+
+        /* scrollbar playlist */
+        .track-list::-webkit-scrollbar {
+            width: 4px;
+        }
+        .track-list::-webkit-scrollbar-track {
+            background: #1a1f32;
+            border-radius: 8px;
+        }
+        .track-list::-webkit-scrollbar-thumb {
+            background: #5f71bf;
+            border-radius: 8px;
+        }
+
+        /* responsive */
+        @media (max-width: 500px) {
+            .music-container {
+                border-radius: 2rem;
+            }
+            .track-title {
+                font-size: 1.3rem;
+            }
+            .cover-circle {
+                width: 150px;
+                height: 150px;
+            }
+            .ctrl-btn {
+                width: 48px;
+                height: 48px;
+            }
+            .play-pause {
+                width: 62px;
+                height: 62px;
+            }
+            .action-buttons {
+                gap: 1.3rem;
+            }
+            .player-header h1 {
+                font-size: 1.4rem;
+            }
+        }
+        /* pesan jika belum ada lagu */
+        .empty-playlist {
+            text-align: center;
+            padding: 2rem;
+            color: #a5b0e0;
+            font-size: 0.85rem;
+        }
+        footer {
+            text-align: center;
+            padding: 0.8rem 0 1.2rem;
+            font-size: 0.7rem;
+            color: #5f6a94;
+        }
+    </style>
+</head>
+<body>
+<div class="music-container" id="appRoot">
+    <div class="player-header">
+        <h1>🎵 Musik Player</h1>
+        <div class="badge">GitHub Tracks</div>
+    </div>
+
+    <div class="cover-area">
+        <div class="cover-circle">
+            <i>🎧</i>
+        </div>
+        <div class="track-info">
+            <div class="track-title" id="currentTitle">Pilih Lagu</div>
+            <div class="track-artist" id="currentArtist">Dari Repo GitHub</div>
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="progress-area">
+            <span class="time-current" id="currentTime">0:00</span>
+            <input type="range" id="progressSlider" value="0" step="0.1">
+            <span class="time-duration" id="durationTime">0:00</span>
+        </div>
+        <div class="action-buttons">
+            <button class="ctrl-btn" id="prevBtn" aria-label="Lagu sebelumnya">
+                <svg viewBox="0 0 24 24"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+            </button>
+            <button class="ctrl-btn play-pause" id="playPauseBtn" aria-label="Putar/Jeda">
+                <svg id="playIcon" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                <svg id="pauseIcon" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+            </button>
+            <button class="ctrl-btn" id="nextBtn" aria-label="Lagu berikutnya">
+                <svg viewBox="0 0 24 24"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <div class="playlist-section">
+        <div class="section-title">
+            <span>📀 Daftar Putar (dari repo)</span>
+            <span id="trackCountLabel"></span>
+        </div>
+        <ul class="track-list" id="playlistContainer">
+            <!-- playlist dinamis dari javascript -->
+        </ul>
+        <footer>🎶 Klik lagu untuk memutar | Sumber dari GitHub</footer>
+    </div>
+</div>
+
+<script>
+    // ============================================================
+    // PENJELASAN: Silakan ganti daftar lagu di bawah ini dengan URL mentah (raw) milik GitHub
+    // Ganti 'NAMA_FILE.mp3' dengan file yang sudah diupload ke repo GitHub, pastikan raw URL bisa diakses.
+    // Contoh: "https://raw.githubusercontent.com/username/repo/branch/nama_lagu.mp3"
+    // Format disarankan MP3, bisa juga OGG tetapi pastikan browser support.
+    // Default: contoh lagu demo (jika tidak ada di raw, akan error handling -> skip).
+    // ============================================================
+
+    // ***** MASUKKAN LAGU ANDA DI SINI *****
+    // Setiap objek: { name: "Judul Lagu", artist: "Nama Artis", src: "raw url GitHub" }
+    const PLAYLIST_SOURCE = [
+        {
+            name: "Lofi Dream",
+            artist: "Chill Beats",
+            src: "https://raw.githubusercontent.com/neffexmusic/Neffex-Demo/main/Neffex%20-%20Rise%20%5BFree%20Use%5D.mp3?raw=true"
+            // Catatan: URL di atas hanyalah contoh demo publik (Neffex - Rise free use).
+            // Ganti dengan file mp3 milik anda yang sudah diupload di repo GitHub.
+        },
+        {
+            name: "Evening Waves",
+            artist: "Sunar",
+            src: "https://raw.githubusercontent.com/neffexmusic/Neffex-Demo/main/Neffex%20-%20Rise%20%5BFree%20Use%5D.mp3?raw=true"
+            // ganti dengan file lagu ke-2 milik Anda (copy URL raw github)
+        },
+        {
+            name: "Jazz Sunset",
+            artist: "Lofi Jazz",
+            src: "https://raw.githubusercontent.com/neffexmusic/Neffex-Demo/main/Neffex%20-%20Rise%20%5BFree%20Use%5D.mp3?raw=true"
+        }
+        // =========================================================
+        // TAMBAHKAN LAGU SESUAI KEBUTUHAN:
+        // { name: "Judul", artist: "Penyanyi", src: "https://raw.githubusercontent.com/user/repo/branch/namafile.mp3" },
+    ];
+    // NOTICE: untuk contoh demo saya menggunakan 3 lagu dengan URL yang sama (Neffex Rise)
+    // Namun anda WAJIB mengganti src dengan URL mentah milik anda sendiri agar bisa memutar lagu unik.
+    // Jika ingin test, upload lagu mp3 ke repo github, lalu klik raw, copy link.
+    // ============================================================
+
+    // DOM elements
+    const audioPlayer = new Audio();
+    let currentTrackIndex = 0;
+    let isPlaying = false;
+    let tracks = [];
+    let progressInterval = null;
+
+    // ambil element
+    const playPauseBtn = document.getElementById('playPauseBtn');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const progressSlider = document.getElementById('progressSlider');
+    const currentTimeSpan = document.getElementById('currentTime');
+    const durationTimeSpan = document.getElementById('durationTime');
+    const currentTitleSpan = document.getElementById('currentTitle');
+    const currentArtistSpan = document.getElementById('currentArtist');
+    const playlistContainer = document.getElementById('playlistContainer');
+    const trackCountLabel = document.getElementById('trackCountLabel');
+    const playIconSvg = document.getElementById('playIcon');
+    const pauseIconSvg = document.getElementById('pauseIcon');
+
+    // Filter & validasi playlist, pastikan src valid string
+    function loadPlaylist() {
+        // memfilter lagu yang memiliki src string valid (bukan kosong)
+        tracks = PLAYLIST_SOURCE.filter(track => track.src && track.src.trim() !== "");
+        if (tracks.length === 0) {
+            // jika kosong, tampilkan pesan default dummy (agar tidak error)
+            tracks = [{
+                name: "Contoh Lagu (Ganti URL)",
+                artist: "Upload file MP3 ke GitHub",
+                src: "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3"
+            }];
+        }
+        trackCountLabel.innerText = `${tracks.length} lagu`;
+        renderPlaylist();
+        if (tracks.length > 0 && currentTrackIndex < tracks.length) {
+            loadTrack(currentTrackIndex);
+        } else {
+            currentTrackIndex = 0;
+            if(tracks.length) loadTrack(0);
+        }
+    }
+
+    // render daftar lagu di UI
+    function renderPlaylist() {
+        if (!playlistContainer) return;
+        if (tracks.length === 0) {
+            playlistContainer.innerHTML = '<div class="empty-playlist">✨ Belum ada lagu, tambahkan playlist di variabel PLAYLIST_SOURCE ✨</div>';
+            return;
+        }
+        let html = '';
+        tracks.forEach((track, idx) => {
+            const isActive = (idx === currentTrackIndex);
+            const activeClass = isActive ? 'active-track' : '';
+            // estimasi durasi tidak tampil karena audio belum dimuat, bisa diupdate nanti, tapi tampilkan placeholder
+            html += `
+                <li data-index="${idx}" class="${activeClass}">
+                    <div class="track-index">${idx+1}</div>
+                    <div class="track-name">${escapeHtml(track.name)} <span style="font-size:0.7rem; color:#8c9aff;"> — ${escapeHtml(track.artist)}</span></div>
+                    <div class="track-duration" id="trackDur-${idx}">--:--</div>
+                    ${isActive ? '<div class="now-playing-badge">▶</div>' : ''}
+                </li>
+            `;
+        });
+        playlistContainer.innerHTML = html;
+
+        // attach event listener ke setiap li
+        document.querySelectorAll('.track-list li').forEach(li => {
+            li.addEventListener('click', (e) => {
+                const idx = parseInt(li.getAttribute('data-index'), 10);
+                if (!isNaN(idx) && idx !== currentTrackIndex) {
+                    changeTrack(idx);
+                } else if (!isNaN(idx) && idx === currentTrackIndex && !isPlaying) {
+                    playAudio();
+                } else if (!isNaN(idx) && idx === currentTrackIndex && isPlaying) {
+                    pauseAudio();
+                }
+            });
+        });
+
+        // setelah render, kita update info durasi jika audio sudah punya metadata
+        if(audioPlayer.src && audioPlayer.duration && !isNaN(audioPlayer.duration)){
+            const durElem = document.getElementById(`trackDur-${currentTrackIndex}`);
+            if(durElem) durElem.innerText = formatTime(audioPlayer.duration);
+        }else{
+            // coba preload metadata untuk setiap track? opsional.
+            tracks.forEach((track, idx) => {
+                const tempAudio = new Audio();
+                tempAudio.preload = 'metadata';
+                tempAudio.src = track.src;
+                tempAudio.addEventListener('loadedmetadata', () => {
+                    const durElem = document.getElementById(`trackDur-${idx}`);
+                    if(durElem && tempAudio.duration && isFinite(tempAudio.duration)) {
+                        durElem.innerText = formatTime(tempAudio.duration);
+                    } else if (durElem && !isFinite(tempAudio.duration)) {
+                        durElem.innerText = '??:??';
+                    }
+                });
+                tempAudio.onerror = () => {
+                    const durElem = document.getElementById(`trackDur-${idx}`);
+                    if(durElem) durElem.innerText = 'error';
+                };
+            });
+        }
+    }
+
+    function formatTime(seconds) {
+        if (isNaN(seconds) || !isFinite(seconds)) return '0:00';
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs < 10 ? '0' + secs : secs}`;
+    }
+
+    function updateTrackActiveUI() {
+        const allItems = document.querySelectorAll('.track-list li');
+        allItems.forEach((item, idx) => {
+            const indexAttr = parseInt(item.getAttribute('data-index'), 10);
+            if (indexAttr === currentTrackIndex) {
+                item.classList.add('active-track');
+                // tambahkan now playing badge jika belum ada
+                if (!item.querySelector('.now-playing-badge')) {
+                    const badgeSpan = document.createElement('div');
+                    badgeSpan.className = 'now-playing-badge';
+                    badgeSpan.innerText = '▶';
+                    item.appendChild(badgeSpan);
+                }
+            } else {
+                item.classList.remove('active-track');
+                const badge = item.querySelector('.now-playing-badge');
+                if (badge) badge.remove();
+            }
+        });
+        // update durasi pada active track jika perlu
+        if(audioPlayer.duration && !isNaN(audioPlayer.duration)){
+            const activeDur = document.getElementById(`trackDur-${currentTrackIndex}`);
+            if(activeDur) activeDur.innerText = formatTime(audioPlayer.duration);
+        }
+    }
+    
+    function escapeHtml(str) {
+        if(!str) return '';
+        return str.replace(/[&<>]/g, function(m) {
+            if(m === '&') return '&amp;';
+            if(m === '<') return '&lt;';
+            if(m === '>') return '&gt;';
+            return m;
+        });
+    }
+
+    function loadTrack(index) {
+        if (!tracks.length) return;
+        if (index < 0) index = 0;
+        if (index >= tracks.length) index = tracks.length - 1;
+        currentTrackIndex = index;
+        const track = tracks[currentTrackIndex];
+        audioPlayer.src = track.src;
+        audioPlayer.load();
+        currentTitleSpan.innerText = track.name;
+        currentArtistSpan.innerText = track.artist;
+        
+        // reset progress & time display
+        progressSlider.value = 0;
+        currentTimeSpan.innerText = '0:00';
+        durationTimeSpan.innerText = '0:00';
+        if (isPlaying) {
+            // jika sebelumnya play, lanjutkan play setelah load
+            audioPlayer.play().then(() => {
+                isPlaying = true;
+                updatePlayPauseButton(true);
+                startProgressTimer();
+            }).catch(err => {
+                console.warn("Gagal memutar otomatis:", err);
+                isPlaying = false;
+                updatePlayPauseButton(false);
+                stopProgressTimer();
+            });
+        } else {
+            updatePlayPauseButton(false);
+            stopProgressTimer();
+        }
+        updateTrackActiveUI();
+        renderPlaylist(); // render ulang untuk refresh badge durasi dll, namun mungkin panggil sendiri di load
+        // agar durasi metadata tertangkap
+        audioPlayer.addEventListener('loadedmetadata', function onMeta() {
+            if (!isNaN(audioPlayer.duration) && isFinite(audioPlayer.duration)) {
+                durationTimeSpan.innerText = formatTime(audioPlayer.duration);
+                const durElem = document.getElementById(`trackDur-${currentTrackIndex}`);
+                if(durElem) durElem.innerText = formatTime(audioPlayer.duration);
+            }
+            audioPlayer.removeEventListener('loadedmetadata', onMeta);
+        });
+        audioPlayer.addEventListener('error', () => {
+            durationTimeSpan.innerText = 'err';
+        });
+    }
+    
+    function playAudio() {
+        if (!tracks.length) return;
+        audioPlayer.play().then(() => {
+            isPlaying = true;
+            updatePlayPauseButton(true);
+            startProgressTimer();
+        }).catch(e => {
+            console.log("Play gagal:", e);
+            isPlaying = false;
+            updatePlayPauseButton(false);
+        });
+    }
+    
+    function pauseAudio() {
+        audioPlayer.pause();
+        isPlaying = false;
+        updatePlayPauseButton(false);
+        stopProgressTimer();
+    }
+    
+    function togglePlayPause() {
+        if (!tracks.length) return;
+        if (isPlaying) {
+            pauseAudio();
+        } else {
+            playAudio();
+        }
+    }
+    
+    function changeTrack(index) {
+        if (index === currentTrackIndex) return;
+        if (index < 0) index = 0;
+        if (index >= tracks.length) index = tracks.length - 1;
+        const wasPlaying = isPlaying;
+        if (wasPlaying) {
+            pauseAudio();
+        }
+        loadTrack(index);
+        if (wasPlaying) {
+            playAudio();
+        }
+    }
+    
+    function nextTrack() {
+        let newIndex = currentTrackIndex + 1;
+        if (newIndex >= tracks.length) newIndex = 0;
+        changeTrack(newIndex);
+    }
+    
+    function prevTrack() {
+        let newIndex = currentTrackIndex - 1;
+        if (newIndex < 0) newIndex = tracks.length - 1;
+        changeTrack(newIndex);
+    }
+    
+    function updatePlayPauseButton(playing) {
+        if (playing) {
+            playIconSvg.style.display = 'none';
+            pauseIconSvg.style.display = 'block';
+        } else {
+            playIconSvg.style.display = 'block';
+            pauseIconSvg.style.display = 'none';
+        }
+    }
+    
+    function startProgressTimer() {
+        if (progressInterval) clearInterval(progressInterval);
+        progressInterval = setInterval(() => {
+            if (audioPlayer && !audioPlayer.paused && !isNaN(audioPlayer.duration) && audioPlayer.duration > 0) {
+                const current = audioPlayer.currentTime;
+                const dur = audioPlayer.duration;
+                progressSlider.value = (current / dur) * 100;
+                currentTimeSpan.innerText = formatTime(current);
+                if (!isNaN(dur)) durationTimeSpan.innerText = formatTime(dur);
+            } else if (audioPlayer && audioPlayer.paused) {
+                // jika paused, tetap update waktu
+                if (!isNaN(audioPlayer.currentTime)) currentTimeSpan.innerText = formatTime(audioPlayer.currentTime);
+            }
+        }, 300);
+    }
+    
+    function stopProgressTimer() {
+        if (progressInterval) {
+            clearInterval(progressInterval);
+            progressInterval = null;
+        }
+    }
+    
+    function seekProgress(e) {
+        if (!audioPlayer || !audioPlayer.duration || isNaN(audioPlayer.duration)) return;
+        const percent = progressSlider.value / 100;
+        audioPlayer.currentTime = percent * audioPlayer.duration;
+        currentTimeSpan.innerText = formatTime(audioPlayer.currentTime);
+    }
+    
+    // ketika lagu selesai, next otomatis
+    function onTrackEnd() {
+        nextTrack();
+    }
+    
+    // event listener
+    playPauseBtn.addEventListener('click', togglePlayPause);
+    prevBtn.addEventListener('click', prevTrack);
+    nextBtn.addEventListener('click', nextTrack);
+    progressSlider.addEventListener('input', seekProgress);
+    audioPlayer.addEventListener('ended', onTrackEnd);
+    audioPlayer.addEventListener('timeupdate', () => {
+        if (audioPlayer.duration && !isNaN(audioPlayer.duration)) {
+            const percent = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progressSlider.value = percent;
+            currentTimeSpan.innerText = formatTime(audioPlayer.currentTime);
+        }
+    });
+    
+    // init
+    loadPlaylist();
+</script>
+</body>
+</html>
